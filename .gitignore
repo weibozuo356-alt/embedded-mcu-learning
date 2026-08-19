@@ -11,6 +11,7 @@ Listings/
 *.hex
 *.bin
 *.map
+*.exe
 
 # IDE and editor files
 .vscode/
