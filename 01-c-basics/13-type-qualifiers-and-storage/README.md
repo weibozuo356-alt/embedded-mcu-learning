@@ -144,7 +144,87 @@ static void update_counter(void)
 volatile unsigned int event_flag = 0U;
 ```
 
+这条声明可以拆成：
+
+```text
+volatile     unsigned int     event_flag     = 0U;
+限定符        数据类型          变量名          初始值
+```
+
+- `volatile`：这个变量可能被当前代码之外的执行过程改变
+- `unsigned int`：无符号整数类型，只表示 `0` 和正整数
+- `event_flag`：变量名
+- `0U`：无符号整数常量 `0`
+
 `volatile` 告诉编译器：这个对象可能在当前代码看不到的地方发生变化，因此每次读取和写入都要按程序表达式实际进行，不能仅使用之前缓存的结果。
+
+### 4.1 volatile 不会让程序“再跑一次”
+
+`volatile` 不会产生循环，不会让整个程序重新运行，也不会主动修改变量。
+
+下面代码之所以重复执行，是因为使用了 `while`：
+
+```c
+volatile unsigned int data_ready = 0U;
+
+while (data_ready == 0U)
+{
+    /* 等待 */
+}
+```
+
+两个部分的职责不同：
+
+```text
+while      让判断过程重复执行
+volatile   让每次判断都重新访问 data_ready
+```
+
+可以把 `data_ready` 想象成一块可能被中断更新的公告牌：
+
+- 没有 `volatile`：编译器可能认为记住上次结果就够了
+- 使用 `volatile`：每次判断时都重新查看公告牌
+
+可能发生的时间过程是：
+
+```text
+主程序第1次读取 data_ready -> 0，继续等待
+主程序第2次读取 data_ready -> 0，继续等待
+中断把 data_ready 修改为 1
+主程序第3次读取 data_ready -> 1，退出循环
+```
+
+这里让代码重复判断的是 `while`；`volatile` 只保证每次判断不会仅沿用之前读取到的旧结果。
+
+### 4.2 为什么普通变量可能有问题
+
+假设没有使用 `volatile`：
+
+```c
+unsigned int data_ready = 0U;
+
+while (data_ready == 0U)
+{
+    /* 循环内部没有修改 data_ready */
+}
+```
+
+编译器只观察这段普通代码时，可能发现循环内部没有语句修改 `data_ready`，于是减少或合并对它的读取。
+
+但在 STM32 中，中断服务程序可能在主程序看不到的时刻修改它：
+
+```c
+void uart_interrupt_handler(void)
+{
+    data_ready = 1U;
+}
+```
+
+因此主程序与中断之间共享的简单标志通常需要声明为：
+
+```c
+volatile unsigned int data_ready = 0U;
+```
 
 常见来源包括：
 
@@ -152,23 +232,13 @@ volatile unsigned int event_flag = 0U;
 - 中断服务程序改变共享标志
 - 某些底层系统环境改变内存
 
-例如主程序等待中断设置标志：
-
-```c
-volatile unsigned int data_ready = 0U;
-
-while (data_ready == 0U)
-{
-    /* 等待中断更新 data_ready */
-}
-```
-
-如果没有 `volatile`，编译器可能认为循环中没有代码会修改 `data_ready`，从而减少或合并读取。
-
-### 4.1 volatile 不是什么
+### 4.3 volatile 不是什么
 
 `volatile` 不保证：
 
+- 自动重复执行代码
+- 自动等待或主动检测事件
+- 自动改变变量的值
 - 多步操作不可被打断
 - `counter++` 是原子操作
 - 多线程访问没有竞争
@@ -177,7 +247,7 @@ while (data_ready == 0U)
 
 如果主程序和中断会同时修改复杂数据，仍需根据 MCU 和场景使用临界区、关闭中断、原子操作或其他同步机制。
 
-### 4.2 const volatile
+### 4.4 const volatile
 
 硬件状态寄存器可能由硬件改变，而软件只应读取：
 
