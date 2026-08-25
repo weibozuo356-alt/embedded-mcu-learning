@@ -16,7 +16,9 @@
 
 ## 1. 枚举 enum
 
-当一个变量只允许出现有限的几种状态时，可以使用枚举。
+可以先把枚举理解成：**为一组相关的整数取有意义的名字，并用一个枚举类型表示这组状态。**
+
+例如，使用 `0`、`1`、`2` 表示 LED 状态虽然可以运行，但阅读代码的人很难知道这些数字分别是什么意思。枚举可以把它们命名为 `LED_OFF`、`LED_ON` 和 `LED_BLINKING`。
 
 ```c
 enum LedState
@@ -27,7 +29,7 @@ enum LedState
 };
 ```
 
-如果没有手动指定数值，第一个成员从 `0` 开始，后面的成员依次加 `1`：
+如果没有手动指定数值，第一个枚举成员从 `0` 开始，后面的成员依次加 `1`：
 
 ```text
 LED_OFF      = 0
@@ -35,15 +37,72 @@ LED_ON       = 1
 LED_BLINKING = 2
 ```
 
-定义变量：
+这里需要区分三个不同的东西：
+
+| 代码 | 身份 | 含义 |
+| --- | --- | --- |
+| `enum LedState` | 枚举类型 | 描述 LED 状态这一类数据 |
+| `state` | 变量名 | 真正用来保存当前状态的变量 |
+| `LED_ON` | 枚举常量 | 有名称的整数值，默认对应 `1` |
+
+### 1.1 定义一个枚举变量
+
+先定义枚举类型，再定义该类型的变量：
 
 ```c
 enum LedState state = LED_ON;
 ```
 
-枚举成员本质上是有名字的整数常量。与直接写 `0`、`1`、`2` 相比，`LED_ON` 的含义更加清楚。
+这句话可以按照普通变量声明的结构理解：
 
-### 1.1 手动指定枚举值
+```text
+enum LedState    state    = LED_ON;
+数据类型          变量名      初始值
+```
+
+它与下面的普通整数声明在语法结构上很相似：
+
+```text
+int              number   = 10;
+数据类型           变量名      初始值
+```
+
+所以它的完整含义是：
+
+> 定义一个 `enum LedState` 类型的变量 `state`，并把初始状态设置为 `LED_ON`。
+
+### 1.2 为什么使用 LED_ON 而不是直接写 1
+
+因为 `LED_ON` 默认对应 `1`，下面两种写法在这个枚举定义下可能得到相同的数值：
+
+```c
+state = LED_ON; /* 推荐：直接表达“LED 开启” */
+state = 1;      /* 不推荐：读者需要猜测 1 的含义 */
+```
+
+枚举常量不是字符串，也不是另一个普通变量。它是一个有名称的整数常量：
+
+```c
+state = LED_ON;    /* 正确 */
+state = "LED_ON";  /* 错误：这是字符串 */
+```
+
+后续赋值、比较和 `switch` 都可以继续使用枚举名称：
+
+```c
+state = LED_BLINKING;
+
+if (state == LED_ON)
+{
+    printf("LED is on\n");
+}
+```
+
+这样代码表达的是“状态”，而不是没有上下文的数字。即使以后把 `LED_ON` 对应的数值改成 `10`，使用 `LED_ON` 的代码仍不需要跟着改。
+
+需要注意：C 语言的枚举主要提供名称和类型含义，并不会像某些语言那样绝对禁止所有其他整数值。因此编程时应主动只使用定义好的枚举成员，并保留对异常值的处理。
+
+### 1.3 手动指定枚举值
 
 ```c
 enum ErrorCode
@@ -56,7 +115,7 @@ enum ErrorCode
 
 只有确实需要与通信协议、硬件定义或已有数据对应时，才需要手动指定数值。
 
-### 1.2 枚举与 switch
+### 1.4 枚举与 switch
 
 枚举经常和 `switch` 配合使用：
 
@@ -95,6 +154,23 @@ Byte value = 10;
 
 ### 2.1 typedef 与枚举
 
+先看不使用 `typedef` 的完整写法：
+
+```c
+enum LedState
+{
+    LED_OFF,
+    LED_ON,
+    LED_BLINKING
+};
+
+enum LedState state = LED_ON;
+```
+
+在这种写法中，`LedState` 是枚举标签，使用该类型时要写完整的 `enum LedState`。
+
+使用 `typedef` 后可以写成：
+
 ```c
 typedef enum
 {
@@ -106,7 +182,26 @@ typedef enum
 LedState state = LED_ON;
 ```
 
-这样定义变量时不必重复写 `enum`。
+这里的含义是：
+
+1. `enum { ... }` 定义了一个枚举类型
+2. `typedef` 给这个类型起别名 `LedState`
+3. `LedState state` 定义了一个该类型的变量 `state`
+4. `= LED_ON` 把变量的初始状态设置为开启
+
+使用 `typedef` 后，`LedState` 可以直接像 `int` 一样放在变量名前面，不必重复写 `enum`：
+
+```text
+LedState    state    = LED_ON;
+类型         变量名      初始值
+```
+
+两种声明方式的对比：
+
+```c
+enum LedState state = LED_ON; /* 没有使用 typedef */
+LedState state = LED_ON;      /* 使用了 typedef */
+```
 
 ### 2.2 typedef 与结构体
 
