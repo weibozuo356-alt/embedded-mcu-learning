@@ -425,7 +425,7 @@
             <File>
               <FileName>Delay.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USer\Delay.c</FilePath>
+              <FilePath>.\Delay.c</FilePath>
             </File>
           </Files>
         </Group>

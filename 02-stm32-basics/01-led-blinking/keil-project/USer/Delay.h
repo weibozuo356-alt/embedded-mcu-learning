@@ -1,10 +1,8 @@
 #ifndef __DELAY_H__
 #define __DELAY_H__
 
-#include <stdint.h>
-
-void Delay_us(uint32_t xus);
-void Delay_ms(uint32_t xms);
-void Delay_s(uint32_t xs);
+void Delay_us(uint32_t nus);
+void Delay_ms(uint32_t nms);
+void Delay_s(uint32_t ns);
 
 #endif

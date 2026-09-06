@@ -1,7 +1,6 @@
 # Build outputs
 build/
 Debug/
-DebugConfig/
 Release/
 Objects/
 Listings/
