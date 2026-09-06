@@ -17,8 +17,6 @@ Listings/
 .vscode/
 .idea/
 *.uvguix.*
-*.uvoptx
-*.uvprojx
 *.launch
 
 # STM32CubeIDE metadata
